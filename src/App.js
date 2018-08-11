@@ -2,9 +2,10 @@ import React, { Component } from 'react';
 // import Spotify from 'node-spotify-api';
 import Axios from 'axios';
 import './App.css';
+import { spotifyHelpers } from './SpotifyHelpers';
 
 const GLOBAL = {
-  key: "BQAwIge-uSidkrv5FOEkxD9NfwtRSHuHxUH1jKLesPrhPIx0QWCl5fAxvftxQNiqVJmndNZZNjrqz5CZQ39nL02EVhHWR_xHghXD8JYvefigZPYqqBhcxoWiRg5IRdFXxR9zLQYv_w"
+  key: "BQAfdKGMCjvUL32ihzspQ3CDTq_dga2a-tImA7NKRgtfLw8-msHtLAIk1ymtoWgFTuIOxIvDkkacn5JdqwBR__nIjX_RZGe7j9ljohe0ymEVMe7Wq_G5mV8L8hMZ57dBJXck8oMN3A"
 }
 
 class App extends Component {
@@ -13,12 +14,17 @@ class App extends Component {
     super(props)
 
     this.state = {
+      searchTerm: "",
+      searchResults: [],
       artistInfo: {},
       artistAlbums: [],
       albumTracks: [],
     }
 
     this.handleGetAlbums = this.handleGetAlbums.bind(this)
+    this.handleChange = this.handleChange.bind(this)
+    this.handleSearch = this.handleSearch.bind(this)
+    // this.getSearchResults = this.getSearchResults.bind(this)
   }
   componentDidMount() {
     //let spotify = new Spotify({
@@ -34,20 +40,47 @@ class App extends Component {
     // click "post" and then the new token will come back
     // paste it after the bearer part of Axios below
 
-    Axios.get('https://api.spotify.com/v1/artists/3inCNiUr4R6XQ3W43s9Aqi', {
+    
+  }
+  handleChange(e) {
+    this.setState({
+      searchTerm: e.target.value
+    })
+  }
+
+  handleSearch() {
+    Axios.get(`https://api.spotify.com/v1/search?q=${this.state.searchTerm}&type=artist&limit=10`, {
       headers: {
         'Authorization': 'Bearer ' + GLOBAL.key
       }
     }).then((response) => {
+      console.log(response.data)
       this.setState ({
-        artistInfo: response.data
+        searchResults: response.data.artists.items
       })
+      console.log(this.state.searchResults)
     })
   }
 
-  handleGetAlbums() {
+  handleGetArtist(id) {
+    console.log("ID: " + id)
+    Axios.get(`https://api.spotify.com/v1/artists/${id}`, {
+      headers: {
+        'Authorization': 'Bearer ' + GLOBAL.key
+      }
+    }).then((response) => {
+      console.log(response.data)
+      this.setState ({
+        artistAlbums: response.data.items
+      })
+      console.log(this.state.artistAlbums)
+    })
+  }
 
-    Axios.get('https://api.spotify.com/v1/artists/3inCNiUr4R6XQ3W43s9Aqi/albums', {
+
+  handleGetAlbums(id) {
+
+    Axios.get(`https://api.spotify.com/v1/artists/${id}/albums`, {
       headers: {
         'Authorization': 'Bearer ' + GLOBAL.key
       }
@@ -71,50 +104,27 @@ class App extends Component {
   })
 }
 
-getAlbums() {
-  if (this.state.artistAlbums) {
-    return (
-    <div>{
-      this.state.artistAlbums.map(album => {
-        return  <div key={album.id}>
-                  <span onClick={this.handleGetTracks.bind(this, album.id)}>{album.name}</span>
-                </div>
-        })
-      }
-      </div>
-    )
-  }
-  return null;
-}
 
- getTracks() {
-  if (this.state.albumTracks) {
-    return (
-    <div>{
-      this.state.albumTracks.map(track => {
-        return  <div key={track.id}>
-                  <span>{track.name}</span>
-                </div>
-        })
-      }
-      </div>
-    )
-  }
-  return null;
- }
   render() {
+    if (this.state.albumTracks.length > 0) {
+      return spotifyHelpers.getTracks(this.state.albumTracks);
+    }
 
-    let albums = this.getAlbums();
+    if (this.state.artistAlbums.length > 0) {
+      return spotifyHelpers.getAlbums(this.state.artistAlbums, this);
+    }
 
-    let tracks = this.getTracks();
+    if (this.state.searchResults.length > 0) {
+      return spotifyHelpers.getSearchResults(this.state.searchResults, this);
+    }
     
     return (
-      <div>
-        <h1>{this.state.artistInfo.name}</h1>
-        <button onClick={this.handleGetAlbums}>View albums</button>
-        <div>{albums}</div>
+      <div className="input">
+
+        <input onChange={this.handleChange} type='text' placeholder='...enter an artist'/> 
+        <button className ="button" onClick={this.handleSearch}>Search</button>
         <hr />
-        <div>{tracks}</div>
+
       </div>
     );
   }

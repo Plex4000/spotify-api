@@ -1,0 +1,10 @@
+.input {
+    margin: 0 auto;
+    width:70%;
+    height:90px;
+    border-radius: 10px;
+    background-color: #fff;
+    text-align: center;
+    line-height: 90px;
+}
+
